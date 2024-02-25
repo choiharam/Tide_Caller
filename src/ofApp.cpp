@@ -5,7 +5,7 @@ void ofApp::setup(){
     ofSetFrameRate(60);
     ofSetVerticalSync(false);
     ofBackground(0);
-    
+    ofHideCursor();
     width = ofGetWidth();
     height = ofGetHeight();
     // ofSetWindowShape(width*2, height*2);
@@ -374,6 +374,11 @@ void ofApp::keyPressed(int key){
     }
     if(key == 'd'){
         bdebug = !bdebug;
+        if(bdebug){
+            ofShowCursor();
+        }else{
+            ofHideCursor();
+        }
     }
 }
 //--------------------------------------------------------------
