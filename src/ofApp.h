@@ -16,9 +16,9 @@ enum StoryTellerPosition{
 };
 
 class PreMap{
-	int x;
-	int y;
-	int tileIdx;
+public:
+	int gridIdx=-1;
+	int tileIdx=0;
 };
 
 class ofApp : public ofBaseApp{
@@ -52,10 +52,14 @@ public:
 	ofFbo fbo;
 	bool bglobalFlipLR;
 	
-	vector<PreMap> preMap;
+	vector<PreMap> premap;
 	bool bisFinished=false;
 	bool bhasToRollBack=false;
-	bool prevTime=0;
+	int rollBackIdx=0;
+	float prevTime=0;
+	float startTime=0;
+	float delay = 3;
+	
 
 
 };

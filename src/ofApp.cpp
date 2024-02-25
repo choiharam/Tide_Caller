@@ -8,10 +8,10 @@ void ofApp::setup(){
     
     width = ofGetWidth();
     height = ofGetHeight();
-    // ofSetWindowShape(width*2, height*2);
-    // width = ofGetWidth();
-    // height = ofGetHeight();
-    // ofSetWindowShape(1920,1080);
+    ofSetWindowShape(width*2, height*2);
+    width = ofGetWidth();
+    height = ofGetHeight();
+    ofSetWindowShape(1920,1080);
 
     gcd = std::gcd(width, height);
     gcd /= 5;
@@ -113,17 +113,25 @@ void ofApp::update(){
             gridCopy.erase(gridCopy.begin() + i);
         }
     }
+
+    // if the grid is empty, then it is finished, start counting the clock
     if(!bisFinished){
         if(gridCopy.empty()){ // is finished
             bisFinished = true;
+            startTime = ofGetElapsedTimef();
             return;
         }
     }else{
-        if(!bhasToRollBack){{ // then count the clock
-
-        }}
+        if(!bhasToRollBack){ // then count the clock
+        cout << "counting the clock" << endl;
+            float t = ofGetElapsedTimef();
+            if(t - startTime > delay){
+                bhasToRollBack = true;
+                prevTime = t;
+            }
+        }
+        return;
     }
-    
 
     // find the cell with least entropy
 
@@ -174,10 +182,9 @@ void ofApp::update(){
     
     // update the determined map
     PreMap pm;
-    pm.x = idx % dim_w;
-    pm.y = idx / dim_w;
+    pm.gridIdx = idx;
     pm.tileIdx = pick;
-    preMap.push_back(pm);
+    premap.push_back(pm);
     
     // count Collapsed
     limitCounter[tiles[pick].imgIndex] += 1;
@@ -192,47 +199,47 @@ void ofApp::update(){
             auto isBiased = std::find(biasedIdxs.begin(), biasedIdxs.end(), idx);
             if(grid[idx].collapsed || isBiased != biasedIdxs.end()){
                     newGrid[idx] = grid[idx];
-                }else{
-                    vector<int> options;
-                    for(int i=0; i<tiles.size(); ++i) options.push_back(i);
-                    // look up
-                    if(j>0){
-                        Cell up = grid[i + (j-1)*dim_w];
-                        vector<int> validOptions;
-                        for(int option : up.options){
-                            validOptions.insert(validOptions.end(), tiles[option].down.begin(), tiles[option].down.end());
-                        }
-                        checkValid(options, validOptions);
+            }else{
+                vector<int> options;
+                for(int i=0; i<tiles.size(); ++i) options.push_back(i);
+                // look up
+                if(j>0){
+                    Cell up = grid[i + (j-1)*dim_w];
+                    vector<int> validOptions;
+                    for(int option : up.options){
+                        validOptions.insert(validOptions.end(), tiles[option].down.begin(), tiles[option].down.end());
                     }
-                    // look right
-                    if(i<dim_w-1){
-                        Cell right = grid[i+1 + j*dim_w];
-                        vector<int> validOptions;
-                        for(int option : right.options){
-                            validOptions.insert(validOptions.end(), tiles[option].left.begin(), tiles[option].left.end());
-                        }
-                        checkValid(options, validOptions);
-                    }
-                    // look down
-                    if(j<dim_h-1){
-                        Cell down = grid[i + (j+1)*dim_w];
-                        vector<int> validOptions;
-                        for(int option : down.options){
-                            validOptions.insert(validOptions.end(), tiles[option].up.begin(), tiles[option].up.end());
-                        }
-                        checkValid(options, validOptions);
-                    }
-                    // look left
-                    if(i>0){
-                        Cell left = grid[i-1 + j*dim_w];
-                        vector<int> validOptions;
-                        for(int option : left.options){
-                            validOptions.insert(validOptions.end(), tiles[option].right.begin(), tiles[option].right.end());
-                        }
-                        checkValid(options, validOptions);
-                    }
-                    newGrid[idx] = Cell(options);
+                    checkValid(options, validOptions);
                 }
+                // look right
+                if(i<dim_w-1){
+                    Cell right = grid[i+1 + j*dim_w];
+                    vector<int> validOptions;
+                    for(int option : right.options){
+                        validOptions.insert(validOptions.end(), tiles[option].left.begin(), tiles[option].left.end());
+                    }
+                    checkValid(options, validOptions);
+                }
+                // look down
+                if(j<dim_h-1){
+                    Cell down = grid[i + (j+1)*dim_w];
+                    vector<int> validOptions;
+                    for(int option : down.options){
+                        validOptions.insert(validOptions.end(), tiles[option].up.begin(), tiles[option].up.end());
+                    }
+                    checkValid(options, validOptions);
+                }
+                // look left
+                if(i>0){
+                    Cell left = grid[i-1 + j*dim_w];
+                    vector<int> validOptions;
+                    for(int option : left.options){
+                        validOptions.insert(validOptions.end(), tiles[option].right.begin(), tiles[option].right.end());
+                    }
+                    checkValid(options, validOptions);
+                }
+                newGrid[idx] = Cell(options);
+            }
         }
     }
     grid = newGrid;
@@ -242,37 +249,56 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     fbo.begin();
-    ofClear(0);
-    //draw the grid
-    float cellSize = gcd;
-    for(int j=0; j<dim_h; ++j){
-        for(int i=0; i<dim_w; ++i){
-            int idx = i + j*dim_w;
-            Cell cell = grid[idx];
-            if(cell.collapsed){
-                int whichTile = cell.options[0];
-                tiles[whichTile].tex.draw(i*cellSize, j*cellSize, cellSize, cellSize);
-                if(blabel)
-                    drawLable(tiles[whichTile], i*cellSize, j*cellSize, i, j);
-            }else{
-                ofPushStyle();
-                
-                ofSetColor(0,140,179);
-                ofNoFill();
-                ofDrawRectangle(i*cellSize, j*cellSize, cellSize, cellSize);
-                ofPopStyle();
-            }
+    
+        if(!bhasToRollBack){
+            ofClear(0);
+            //draw the grid
+            float cellSize = gcd;
+            for(int j=0; j<dim_h; ++j){
+                for(int i=0; i<dim_w; ++i){
+                    int idx = i + j*dim_w;
+                    Cell cell = grid[idx];
+                    if(cell.collapsed){
+                        int whichTile = cell.options[0];
+                        tiles[whichTile].tex.draw(i*cellSize, j*cellSize, cellSize, cellSize);
+                        if(blabel)
+                            drawLable(tiles[whichTile], i*cellSize, j*cellSize, i, j);
+                    }else{
+                        ofPushStyle();
+                        ofSetColor(0,140,179);
+                        ofNoFill();
+                        ofDrawRectangle(i*cellSize, j*cellSize, cellSize, cellSize);
+                        ofPopStyle();
+                    }
 
-            // draw the grid
-            if(!bgrid) continue;
+                    // draw the grid
+                    if(!bgrid) continue;
+                    ofPushStyle();
+                    ofSetColor(255,0,0, 80);
+                    ofNoFill();
+                    ofDrawRectangle(i*cellSize, j*cellSize, cellSize, cellSize);
+                    ofPopStyle();
+                }
+            }
+        }else{
+            int x = premap.back().gridIdx % dim_w;
+            int y = premap.back().gridIdx / dim_w;
             ofPushStyle();
-            ofSetColor(255,0,0, 80);
+            ofSetColor(0);
+            ofFill();
+            ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
+            ofSetColor(0,140,179);
             ofNoFill();
-            ofDrawRectangle(i*cellSize, j*cellSize, cellSize, cellSize);
+            ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
             ofPopStyle();
+            premap.pop_back();
+            if(premap.empty()){
+                startOver();
+            }
         }
-    }
+
     fbo.end();
+
     if(bglobalFlipLR){
         fbo.draw(width,0,-width,height);
     }else{
@@ -286,7 +312,24 @@ void ofApp::draw(){
         ss << "dim: " << dim_w << "," << dim_h << '\n';
         ss << "gcd: " << gcd << '\n';
         ss << "flip: " << bglobalFlipLR << '\n';
-        ofDrawBitmapStringHighlight(ss.str(), 30, 30);
+        ss << "bisFinished: " << (bisFinished?"True":"False") << '\n';
+        ss << "bhasToRollBack: " << (bhasToRollBack?"True":"False") << '\n';
+        ss << "rollBackIdx: " << rollBackIdx << '\n';
+        ss << "premap.size(): " << premap.size() << '\n';
+        ss << "time: " << ofGetElapsedTimef() << '\n';
+        ss << "starttime: " << startTime << '\n';
+        ss << "Tdiff: " << ofGetElapsedTimef()-startTime << '\n';
+        ofDrawBitmapStringHighlight(ss.str(), gcd*dim_w+10, 30);
+
+        std::stringstream sss;
+        bool nl = false;
+        for(int i=0; i<premap.size(); ++i){
+            sss << premap[i].gridIdx << ", ";
+            if(i%20==0){
+                sss << '\n';
+            }
+        }
+        ofDrawBitmapStringHighlight(sss.str(), gcd*dim_w+200, 20);
     }
     
 
@@ -318,7 +361,10 @@ void ofApp::mousePressed(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::startOver(){
     cout << "Starting Over" << endl;
-    preMap.clear();
+    bisFinished = false;
+    bhasToRollBack = false;
+    rollBackIdx = 0;
+    premap.clear();
     bglobalFlipLR = (ofRandomuf()>0.5?true:false);
     for(int i=0; i<dim_w*dim_h; ++i){
         grid[i] = Cell(tiles.size());
