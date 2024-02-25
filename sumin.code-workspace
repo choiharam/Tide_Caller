@@ -10,5 +10,10 @@
 			"path": "${workspaceRoot}/../../../../addons"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"vector": "cpp",
+			"iosfwd": "cpp"
+		}
+	}
 }

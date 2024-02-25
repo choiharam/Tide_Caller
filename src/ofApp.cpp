@@ -113,10 +113,17 @@ void ofApp::update(){
             gridCopy.erase(gridCopy.begin() + i);
         }
     }
+    if(!bisFinished){
+        if(gridCopy.empty()){ // is finished
+            bisFinished = true;
+            return;
+        }
+    }else{
+        if(!bhasToRollBack){{ // then count the clock
 
-    if(gridCopy.empty()){
-        return;
+        }}
     }
+    
 
     // find the cell with least entropy
 
@@ -164,6 +171,13 @@ void ofApp::update(){
     }
 
     gridCopy[idx]->options = {pick};
+    
+    // update the determined map
+    PreMap pm;
+    pm.x = idx % dim_w;
+    pm.y = idx / dim_w;
+    pm.tileIdx = pick;
+    preMap.push_back(pm);
     
     // count Collapsed
     limitCounter[tiles[pick].imgIndex] += 1;
@@ -304,6 +318,7 @@ void ofApp::mousePressed(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::startOver(){
     cout << "Starting Over" << endl;
+    preMap.clear();
     bglobalFlipLR = (ofRandomuf()>0.5?true:false);
     for(int i=0; i<dim_w*dim_h; ++i){
         grid[i] = Cell(tiles.size());
