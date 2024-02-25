@@ -6,6 +6,8 @@
 
 #define IMG_NUM 35
 
+// #define ROLLBACK
+
 enum StoryTellerPosition{
 	ST_CENTER_LEFT=0,
 	ST_CENTER_RIGHT,

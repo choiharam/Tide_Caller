@@ -116,7 +116,7 @@ void ofApp::update(){
             gridCopy.erase(gridCopy.begin() + i);
         }
     }
-
+#ifdef ROLLBACK
     // if the grid is empty, then it is finished, start counting the clock
     if(!bisFinished){
         if(gridCopy.empty()){ // is finished
@@ -147,6 +147,25 @@ void ofApp::update(){
         }
         return;
     }
+#else
+    if(!bisFinished){
+        if(gridCopy.empty()){ // is finished
+            bisFinished = true;
+            startTime = ofGetElapsedTimef();
+            return;
+        }
+    }else{
+        if(!bhasToRollBack){ // then count the clock
+            float t = ofGetElapsedTimef();
+            if(t - startTime > delay){
+                bhasToRollBack = true;
+                prevTime = t;
+                startOver();
+            }
+        }
+    }
+
+#endif
 
     // find the cell with least entropy
 
@@ -194,12 +213,13 @@ void ofApp::update(){
     }
 
     gridCopy[idx]->options = {pick};
-    
+#ifdef ROLLBACK
     // update the determined map
     PreMap pm;
     pm.gridIdx = gridCopy[idx]->gridIdx;
     pm.tileIdx = pick;
     premap.push_back(pm);
+#endif
     
     // count Collapsed
     limitCounter[tiles[pick].imgIndex] += 1;
@@ -338,16 +358,6 @@ void ofApp::draw(){
         ss << "starttime: " << startTime << '\n';
         ss << "Tdiff: " << ofGetElapsedTimef()-startTime << '\n';
         ofDrawBitmapStringHighlight(ss.str(), gcd*dim_w+10, 30);
-
-        std::stringstream sss;
-        bool nl = false;
-        for(int i=0; i<premap.size(); ++i){
-            sss << premap[i].gridIdx << ", ";
-            if(i%20==0){
-                sss << '\n';
-            }
-        }
-        ofDrawBitmapStringHighlight(sss.str(), gcd*dim_w+200, 20);
     }
 }
 
