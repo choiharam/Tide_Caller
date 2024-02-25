@@ -8,10 +8,10 @@ void ofApp::setup(){
     
     width = ofGetWidth();
     height = ofGetHeight();
-    ofSetWindowShape(width*2, height*2);
-    width = ofGetWidth();
-    height = ofGetHeight();
-    ofSetWindowShape(1920,1080);
+    // ofSetWindowShape(width*2, height*2);
+    // width = ofGetWidth();
+    // height = ofGetHeight();
+    // ofSetWindowShape(1920,1080);
 
     gcd = std::gcd(width, height);
     gcd /= 5;
@@ -276,11 +276,11 @@ void ofApp::draw(){
     }
     
 
-    std::stringstream sss;
-    for(int i=0; i<IMG_NUM; ++i){
-        sss << i << '\t' << limitCounter[i] << '\t' << tiles[i].limit << '\n';
-    }
-    ofDrawBitmapStringHighlight(sss.str(), width+10, 30);
+    // std::stringstream sss;
+    // for(int i=0; i<IMG_NUM; ++i){
+    //     sss << i << '\t' << limitCounter[i] << '\t' << tiles[i].limit << '\n';
+    // }
+    // ofDrawBitmapStringHighlight(sss.str(), width+10, 30);
 }
 
 //--------------------------------------------------------------
