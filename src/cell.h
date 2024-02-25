@@ -8,6 +8,7 @@ public:
     Cell(int value);
 
 
+    int gridIdx;
     bool collapsed = false;
     vector<int> options;
 

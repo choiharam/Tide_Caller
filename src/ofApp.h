@@ -55,10 +55,14 @@ public:
 	vector<PreMap> premap;
 	bool bisFinished=false;
 	bool bhasToRollBack=false;
+	bool isRollBackFinished=false;
 	int rollBackIdx=0;
 	float prevTime=0;
 	float startTime=0;
 	float delay = 3;
+	bool bsetStartAfterRollBack = false;
+	float delayAfterRollBack = 2;
+	float startTimeAfterRollBack = 0;
 	
 
 

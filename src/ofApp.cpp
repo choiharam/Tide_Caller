@@ -8,10 +8,10 @@ void ofApp::setup(){
     
     width = ofGetWidth();
     height = ofGetHeight();
-    ofSetWindowShape(width*2, height*2);
-    width = ofGetWidth();
-    height = ofGetHeight();
-    ofSetWindowShape(1920,1080);
+    // ofSetWindowShape(width*2, height*2);
+    // width = ofGetWidth();
+    // height = ofGetHeight();
+    // ofSetWindowShape(1920,1080);
 
     gcd = std::gcd(width, height);
     gcd /= 5;
@@ -93,6 +93,9 @@ void ofApp::setup(){
 
     // inizialize the grid
     grid.resize(dim_w*dim_h);
+    for(int i=0; i<dim_w*dim_h; ++i){
+        grid[i].gridIdx = i;
+    }
 
     // set the initial bias
     biasedIdxs.clear();
@@ -123,12 +126,24 @@ void ofApp::update(){
         }
     }else{
         if(!bhasToRollBack){ // then count the clock
-        cout << "counting the clock" << endl;
             float t = ofGetElapsedTimef();
             if(t - startTime > delay){
                 bhasToRollBack = true;
                 prevTime = t;
             }
+        }else{ // check if rollback is finished
+            if(isRollBackFinished){
+                if(!bsetStartAfterRollBack){
+                    startTimeAfterRollBack = ofGetElapsedTimef();
+                    bsetStartAfterRollBack = true;
+                }
+                float t = ofGetElapsedTimef();
+                if(t - startTimeAfterRollBack > delayAfterRollBack){
+                    startOver();
+                }
+                
+            }
+
         }
         return;
     }
@@ -182,7 +197,7 @@ void ofApp::update(){
     
     // update the determined map
     PreMap pm;
-    pm.gridIdx = idx;
+    pm.gridIdx = gridCopy[idx]->gridIdx;
     pm.tileIdx = pick;
     premap.push_back(pm);
     
@@ -239,6 +254,7 @@ void ofApp::update(){
                     checkValid(options, validOptions);
                 }
                 newGrid[idx] = Cell(options);
+                newGrid[idx].gridIdx = idx;
             }
         }
     }
@@ -281,19 +297,21 @@ void ofApp::draw(){
                 }
             }
         }else{
-            int x = premap.back().gridIdx % dim_w;
-            int y = premap.back().gridIdx / dim_w;
-            ofPushStyle();
-            ofSetColor(0);
-            ofFill();
-            ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
-            ofSetColor(0,140,179);
-            ofNoFill();
-            ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
-            ofPopStyle();
-            premap.pop_back();
+            if(!isRollBackFinished){
+                int x = premap.back().gridIdx % dim_w;
+                int y = premap.back().gridIdx / dim_w;
+                ofPushStyle();
+                ofSetColor(0);
+                ofFill();
+                ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
+                ofSetColor(0,140,179);
+                ofNoFill();
+                ofDrawRectangle(x*gcd, y*gcd, gcd, gcd);
+                ofPopStyle();
+                premap.pop_back();
+            }
             if(premap.empty()){
-                startOver();
+                isRollBackFinished = true;
             }
         }
 
@@ -331,13 +349,6 @@ void ofApp::draw(){
         }
         ofDrawBitmapStringHighlight(sss.str(), gcd*dim_w+200, 20);
     }
-    
-
-    // std::stringstream sss;
-    // for(int i=0; i<IMG_NUM; ++i){
-    //     sss << i << '\t' << limitCounter[i] << '\t' << tiles[i].limit << '\n';
-    // }
-    // ofDrawBitmapStringHighlight(sss.str(), width+10, 30);
 }
 
 //--------------------------------------------------------------
@@ -363,6 +374,8 @@ void ofApp::startOver(){
     cout << "Starting Over" << endl;
     bisFinished = false;
     bhasToRollBack = false;
+    isRollBackFinished = false;
+    bsetStartAfterRollBack = false;
     rollBackIdx = 0;
     premap.clear();
     bglobalFlipLR = (ofRandomuf()>0.5?true:false);
@@ -422,6 +435,14 @@ void ofApp::setInitialBias(){
     biasedIdxs.push_back(idx);
     biasedIdxs.push_back(idx+1);
 
+    // add the biased indices to the rollback array
+    PreMap pm;
+    pm.gridIdx = idx;
+    pm.tileIdx = 24;
+    premap.push_back(pm);
+    pm.gridIdx = idx+1;
+    pm.tileIdx = idx7;
+    premap.push_back(pm);
 
 /*
     -------------- Tide Caller bias
@@ -453,6 +474,12 @@ void ofApp::setInitialBias(){
     for(int i=0; i<occupationIdx.size(); ++i){
         occupationIdx[i] += idx27;
     }
+
+    // add the index to the rollback array
+    PreMap pm27;
+    pm27.gridIdx = idx27;
+    pm27.tileIdx = 27;
+    premap.push_back(pm27);
 
 /*
     -------------- Ocean bias
